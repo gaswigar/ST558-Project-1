@@ -1,0 +1,67 @@
+---
+title: "Untitled"
+author: "Grant Swigart"
+date: "6/7/2020"
+output: rmarkdown::github_document
+---
+
+
+
+```{r,setup}
+library(devtools)
+library(bigrquery)
+library(DBI)
+library(tidyverse)
+library(httr)
+library(jsonlite)
+
+
+
+base_url <- "https://records.nhl.com/site/api"
+pikachu<-GET(full_url)
+pikachu_text<-content(pikachu,"text")
+pikachu_data<-fromJSON(pikachu_text,flatten=TRUE)
+print(names(pikachu_data))
+print(length(pikachu_data))
+GET('https://records.nhl.com/site/api/draft?cayenneExp=draftYear=2017%20and%20draftedByTeamId=15')
+
+```
+
+
+
+• Describe JSON data. What is it, where does it get used, and why is it a good way to store data? This
+should be detailed enough that someone that hasn’t seen JSON data would have a good idea what they
+are dealing with. You should link to references where applicable.
+• Discuss the possible packages/functions that are available for reading JSON data into R. (There are
+three major packages for JSON data.) Choose one and explain why you’ve chosen it.
+• Write functions to contact the NHL records ‘Franchise’ API (the previous text is a link) and return
+well-formatted, parsed data:
+
+
+
+
+
+– You should have a function to return parsed data from the following calls:
+∗ /franchise (Returns id, firstSeasonId and lastSeasonId and name of every team in the history
+of the NHL)
+∗ /franchise-team-totals (Returns Total stats for every franchise (ex roadTies, roadWins, etc))
+∗ /site/api/franchise-season-records?cayenneExp=franchiseId=ID (Drill-down into season
+records for a specific franchise)
+· User should be able to specify the franchise
+∗ /franchise-goalie-records?cayenneExp=franchiseId=ID (Goalie records for the specified franchise)
+· User should be able to specify the franchise
+∗ /franchise-skater-records?cayenneExp=franchiseId=ID (Skater records, same interaction as
+goalie endpoint)
+· User should be able to specify the franchise
+• Once you have the functions to query the data, you should perform a basic exploratory data analysis.
+Not all things reported need to show something interesting or meaningful (i.e. graphs that show no
+relationship are fine) but you should discuss each graph (if you don’t know hockey, that is ok - simply
+discuss the graphs and summaries as best you can). A few requirements are below:
+1
+– You should create a new variable at some point
+– You should create some contingency tables and numeric summaries by some of your categorical
+variables
+– You should create some plots (at least a side-by-side bar plot, side-by-side box plots, and scatter
+plots with coloring)
+• Your code chunks should be shown in the final document unless they are set up chunks or other behind
+the scenes things that aren’t important.
