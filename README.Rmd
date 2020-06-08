@@ -5,26 +5,14 @@ date: "6/7/2020"
 output: rmarkdown::github_document
 ---
 
-
-
-```{r,setup}
+```{r,setup,message=FALSE}
 library(devtools)
 library(bigrquery)
 library(DBI)
 library(tidyverse)
 library(httr)
 library(jsonlite)
-
-
-
-base_url <- "https://records.nhl.com/site/api"
-pikachu<-GET(full_url)
-pikachu_text<-content(pikachu,"text")
-pikachu_data<-fromJSON(pikachu_text,flatten=TRUE)
-print(names(pikachu_data))
-print(length(pikachu_data))
-GET('https://records.nhl.com/site/api/draft?cayenneExp=draftYear=2017%20and%20draftedByTeamId=15')
-
+library(gganimate)
 ```
 
 
@@ -32,31 +20,169 @@ GET('https://records.nhl.com/site/api/draft?cayenneExp=draftYear=2017%20and%20dr
 • Describe JSON data. What is it, where does it get used, and why is it a good way to store data? This
 should be detailed enough that someone that hasn’t seen JSON data would have a good idea what they
 are dealing with. You should link to references where applicable.
+
+JSON files are a file type that
+
 • Discuss the possible packages/functions that are available for reading JSON data into R. (There are
 three major packages for JSON data.) Choose one and explain why you’ve chosen it.
+
+
+
+
+
 • Write functions to contact the NHL records ‘Franchise’ API (the previous text is a link) and return
 well-formatted, parsed data:
 
+```{r}
 
 
+#This funciton allows you to perform 4 different data pulls form within the API.
+
+get_nhl<-function(table='franchise',id=''){
+  #Convert the table names and franchise id's into string to prevent data issues with logical checks. 
+  table<-toString(table)
+  id<-toString(id)
+  base_url <- 'https://records.nhl.com/site/api'
+  if(table=='franchise'){
+    build_url=paste0(base_url,'/franchise')
+  }
+  
+  else if(table=='team-totals'){
+    build_url=paste0(base_url,'/franchise-team-totals')
+  }
+  
+  else if(table=='season-records'){
+    build_url=paste0(base_url,'/franchise-season-records?cayenneExp=franchiseId=',id)
+  }
+  
+  else if(table=='goalie-records'){
+    build_url=paste0(base_url,'/franchise-goalie-records?cayenneExp=franchiseId=',id)
+  }
+  
+  else if(table=='skater-records'){
+    build_url=paste0(base_url,'/franchise-skater-records?cayenneExp=franchiseId=',id)
+  }
+  
+  else {
+    print('ERROR: The available tables are "franchise", "team-totals", "season-records", "goalie-records", "skater-records"')
+  }
+  get_request<-GET(build_url)
+  if (get_request$status_code==404){
+    print('Status Code 404.\n
+            The available tables are "franchise", "team-totals", "season-records", "goalie-records", "skater-records" and the available freanchiseIDs can be seen in the franchise table.')
+  }
+  request_text<-content(get_request,"text",encoding='UTF-8')
+  request_list<-fromJSON(request_text,flatten=TRUE)
+  request_data<-request_list$data
+}
 
 
-– You should have a function to return parsed data from the following calls:
-∗ /franchise (Returns id, firstSeasonId and lastSeasonId and name of every team in the history
-of the NHL)
-∗ /franchise-team-totals (Returns Total stats for every franchise (ex roadTies, roadWins, etc))
-∗ /site/api/franchise-season-records?cayenneExp=franchiseId=ID (Drill-down into season
-records for a specific franchise)
-· User should be able to specify the franchise
-∗ /franchise-goalie-records?cayenneExp=franchiseId=ID (Goalie records for the specified franchise)
-· User should be able to specify the franchise
-∗ /franchise-skater-records?cayenneExp=franchiseId=ID (Skater records, same interaction as
-goalie endpoint)
-· User should be able to specify the franchise
-• Once you have the functions to query the data, you should perform a basic exploratory data analysis.
+franchise<-get_nhl()                      
+list_responses<-lapply(franchise$mostRecentTeamId,get_nhl,table='season-records')
+rec_season<-bind_rows(list_responses)
+                     
+list_responses<-lapply(franchise$mostRecentTeamId,get_nhl,table='goalie-records')
+rec_goalie<-bind_rows(list_responses)
+
+list_responses<-lapply(franchise$mostRecentTeamId,get_nhl,table='skater-records')
+rec_skater<-bind_rows(list_responses)
+
+team_totals<-get_nhl(table='team-totals')
+```
+
+Once you have the functions to query the data, you should perform a basic exploratory data analysis.
 Not all things reported need to show something interesting or meaningful (i.e. graphs that show no
 relationship are fine) but you should discuss each graph (if you don’t know hockey, that is ok - simply
-discuss the graphs and summaries as best you can). A few requirements are below:
+discuss the graphs and summaries as best you can). A few requirements are below: 
+
+# Grahs and Visualizations
+
+# Top 10 
+```{r}
+top_10_points<-rec_skater %>%
+  mutate(full_name=paste(firstName,lastName)) %>%
+  group_by(playerId,full_name,activePlayer) %>%
+  summarise(total_points=sum(points),
+            games_played=sum(gamesPlayed),
+            rookiePoints=sum(rookiePoints)) %>%
+  mutate(ppg=as.character(round(total_points/games_played,2)),
+         ppg=paste(ppg,'ppg')) %>%
+  arrange(desc(total_points))
+
+ggplot(top_10_points %>% head(10),aes(x=reorder(full_name,total_points),y=total_points))+
+  geom_col()+ 
+  coord_flip()+
+  geom_text(aes(label=ppg), position=position_dodge(width=0.9), hjust=1.2,vjust=.2)+
+  ylab('Points Scored')+
+  xlab('Player')+
+  ggtitle('Top 10 Points Scored All Time')
+
+```
+
+```{r, Enforcers}
+ggplot(top_10_points,aes(x=rookiePoints,y=total_points))+
+  geom_point(aes(color=activePlayer))+
+  geom_lm()+
+  xlab('')
+
+
+```
+
+
+
+The following animation code was taken from this websity 
+
+```{r,echo=FALSE}
+staticplot = ggplot(gdp_formatted, aes(rank, group = country_name, 
+                fill = as.factor(country_name), color = as.factor(country_name))) +
+  geom_tile(aes(y = value/2,
+                height = value,
+                width = 0.9), alpha = 0.8, color = NA) +
+  geom_text(aes(y = 0, label = paste(country_name, " ")), vjust = 0.2, hjust = 1) +
+  geom_text(aes(y=value,label = Value_lbl, hjust=0)) +
+  coord_flip(clip = "off", expand = FALSE) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_reverse() +
+  guides(color = FALSE, fill = FALSE) +
+  theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+         axis.title.y=element_blank(),
+        legend.position="none",
+        panel.background=element_blank(),
+        panel.border=element_blank(),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.grid.major.x = element_line( size=.1, color="grey" ),
+        panel.grid.minor.x = element_line( size=.1, color="grey" ),
+        plot.title=element_text(size=25, hjust=0.5, face="bold", colour="grey", vjust=-1),
+        plot.subtitle=element_text(size=18, hjust=0.5, face="italic", color="grey"),
+        plot.caption =element_text(size=8, hjust=0.5, face="italic", color="grey"),
+        plot.background=element_blank(),
+       plot.margin = margin(2,2, 2, 4, "cm"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 1
 – You should create a new variable at some point
 – You should create some contingency tables and numeric summaries by some of your categorical
