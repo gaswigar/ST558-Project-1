@@ -1,83 +1,110 @@
 ---
-title: "Untitled"
+title: "Project 1-JSON Vinette"
 author: "Grant Swigart"
 date: "6/7/2020"
 output: rmarkdown::github_document
 ---
 
-```{r,setup,message=FALSE}
+
+
+# Analyzing JSON data in R. 
+## What is JSON? Why is it useful?
+
+JSON stands for Javascript Object Notation. It is a file type for storing information in a understandble manner. One of the largest benefits of this file type is that you can store arrays (some bit of information) within one another and then 
+
+## What package should I use to read JSON data into R?
+
+There ae three main packages that read JSON data into R. 
+
+* rjson
+* RJSONIO
+* jsonlite
+
+One of the major benefits of jsonlite is that it better reads JSON data maps JSON data into R into data types that are more heavely used such as dataframes, lists, and matrices Also, it is better in maintaining the way that missing values ae coded. It also provides more information than the other packages when an error occurs. JSON lite is effecient, especially when compared to rjson.
+
+## What the puck. Lets look at some JSON data!
+
+Here are the packages that we will use to analyze our data.
+```{r setup,message=FALSE,warning=FALSE}
 library(devtools)
-library(bigrquery)
-library(DBI)
 library(tidyverse)
 library(httr)
 library(jsonlite)
-library(gganimate)
+library(knitr)
 ```
 
 
+Thera are many tables that you can request from the API. Some that a
 
-• Describe JSON data. What is it, where does it get used, and why is it a good way to store data? This
-should be detailed enough that someone that hasn’t seen JSON data would have a good idea what they
-are dealing with. You should link to references where applicable.
-
-JSON files are a file type that
-
-• Discuss the possible packages/functions that are available for reading JSON data into R. (There are
-three major packages for JSON data.) Choose one and explain why you’ve chosen it.
-
-
-
-
-
-• Write functions to contact the NHL records ‘Franchise’ API (the previous text is a link) and return
-well-formatted, parsed data:
-
-```{r}
-
-
-#This funciton allows you to perform 4 different data pulls form within the API.
-
+```{r API function}
 get_nhl<-function(table='franchise',id=''){
   #Convert the table names and franchise id's into string to prevent data issues with logical checks. 
   table<-toString(table)
   id<-toString(id)
+  available_id<-c("8","41","45","37","10","6","43","51","39","3","16","17","49","26","25","4","5","19","7","23","20","2","1","15","22","12","21","53","28","9","14","24","13","18","52","29","30","54")
+  if (id!='' & (!table %in% c('skater-records','goalie-records','season-records'))){
+                stop('ERROR: Franchise Id is only used for these tables:\n
+                     "skater-records","goalie-records","season-records"')
+  }
+  else if (id!='' & (!id %in% available_id)){
+                stop(paste("ERROR: The available id's are ",paste0(available_id,collapse=" ")))
+  }
+  else if (id=='' & (table %in% c('skater-records','goalie-records','season-records'))){
+                stop(paste('ERROR: Please submtit an id for these tables. \n
+                           skater-records goalie-records season-records'))
+  }
+  
   base_url <- 'https://records.nhl.com/site/api'
   if(table=='franchise'){
     build_url=paste0(base_url,'/franchise')
   }
-  
   else if(table=='team-totals'){
     build_url=paste0(base_url,'/franchise-team-totals')
   }
-  
   else if(table=='season-records'){
     build_url=paste0(base_url,'/franchise-season-records?cayenneExp=franchiseId=',id)
   }
-  
   else if(table=='goalie-records'){
     build_url=paste0(base_url,'/franchise-goalie-records?cayenneExp=franchiseId=',id)
   }
-  
   else if(table=='skater-records'){
     build_url=paste0(base_url,'/franchise-skater-records?cayenneExp=franchiseId=',id)
   }
-  
+  else if(table=='player'){
+    build_url=paste0(base_url,'/player')
+  }
+  else if(table=='draft'){
+    build_url=paste0(base_url,'/draft')
+  }
+  else if(table=='attendance'){
+    build_url=paste0(base_url,'/attendance')
+  }
   else {
-    print('ERROR: The available tables are "franchise", "team-totals", "season-records", "goalie-records", "skater-records"')
+    stop('ERROR: The available tables are "franchise","team-totals", "season-records", "goalie-records", "skater-records", "player","draft","attendance"')
   }
   get_request<-GET(build_url)
   if (get_request$status_code==404){
-    print('Status Code 404.\n
-            The available tables are "franchise", "team-totals", "season-records", "goalie-records", "skater-records" and the available freanchiseIDs can be seen in the franchise table.')
+    stop('Status Code 404.\n Inccorect URL. This is likely due to askinig for an unavailable table.\n
+        These are tha available tables. Use the "franchise" table to find the list of franchise ids.
+         "team-totals","season-records","goalie-records","skater-records","player","draft","attendance"')
   }
   request_text<-content(get_request,"text",encoding='UTF-8')
   request_list<-fromJSON(request_text,flatten=TRUE)
   request_data<-request_list$data
+  return(request_data)
 }
+```
 
+This fu
 
-franchise<-get_nhl()                      
+```{r}
+franchise<-get_nhl()
+team_totals<-get_nhl(table='team-totals')
+draft<-get_nhl(table='draft')
+attendance<-get_nhl(table='attendance')
+
+player<-get_nhl(table='player')
+
 list_responses<-lapply(franchise$mostRecentTeamId,get_nhl,table='season-records')
 rec_season<-bind_rows(list_responses)
                      
@@ -86,8 +113,6 @@ rec_goalie<-bind_rows(list_responses)
 
 list_responses<-lapply(franchise$mostRecentTeamId,get_nhl,table='skater-records')
 rec_skater<-bind_rows(list_responses)
-
-team_totals<-get_nhl(table='team-totals')
 ```
 
 Once you have the functions to query the data, you should perform a basic exploratory data analysis.
@@ -99,95 +124,97 @@ discuss the graphs and summaries as best you can). A few requirements are below:
 
 # Top 10 
 ```{r}
-top_10_points<-rec_skater %>%
+summary_points<-rec_skater %>%
   mutate(full_name=paste(firstName,lastName)) %>%
-  group_by(playerId,full_name,activePlayer) %>%
-  summarise(total_points=sum(points),
+  group_by(playerId,full_name,activePlayer,positionCode) %>%
+  summarise(seasons=sum(seasons),
+            total_points=sum(points),
             games_played=sum(gamesPlayed),
-            rookiePoints=sum(rookiePoints)) %>%
-  mutate(ppg=as.character(round(total_points/games_played,2)),
-         ppg=paste(ppg,'ppg')) %>%
+            rookiePoints=sum(rookiePoints),
+            penaltyMinutes=sum(penaltyMinutes),
+            total_assists=sum(assists),
+            total_goals=sum(goals)) %>%
+  mutate(ppg=round(total_points/games_played,2),
+         ppg_label=paste(as.character(ppg),'ppg')) %>%
   arrange(desc(total_points))
 
-ggplot(top_10_points %>% head(10),aes(x=reorder(full_name,total_points),y=total_points))+
+  
+
+ggplot(summary_points %>% head(10),aes(x=reorder(full_name,total_points),y=total_points))+
   geom_col()+ 
   coord_flip()+
-  geom_text(aes(label=ppg), position=position_dodge(width=0.9), hjust=1.2,vjust=.2)+
+  geom_text(aes(label=ppg_label), position=position_dodge(width=0.9), hjust=1.2,vjust=.2)+
   ylab('Points Scored')+
   xlab('Player')+
   ggtitle('Top 10 Points Scored All Time')
 
-```
-
-```{r, Enforcers}
-ggplot(top_10_points,aes(x=rookiePoints,y=total_points))+
-  geom_point(aes(color=activePlayer))+
-  geom_lm()+
-  xlab('')
-
-
-```
 
 
 
-The following animation code was taken from this websity 
+top_10_pos<-summary_points %>%
+  group_by(positionCode) %>%
+  top_n(10,wt=total_points)%>%
+  select(positionCode,full_name,total_points,ppg,total_assists,total_goals) 
 
-```{r,echo=FALSE}
-staticplot = ggplot(gdp_formatted, aes(rank, group = country_name, 
-                fill = as.factor(country_name), color = as.factor(country_name))) +
-  geom_tile(aes(y = value/2,
-                height = value,
-                width = 0.9), alpha = 0.8, color = NA) +
-  geom_text(aes(y = 0, label = paste(country_name, " ")), vjust = 0.2, hjust = 1) +
-  geom_text(aes(y=value,label = Value_lbl, hjust=0)) +
-  coord_flip(clip = "off", expand = FALSE) +
-  scale_y_continuous(labels = scales::comma) +
-  scale_x_reverse() +
-  guides(color = FALSE, fill = FALSE) +
-  theme(axis.line=element_blank(),
-        axis.text.x=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks=element_blank(),
-        axis.title.x=element_blank(),
-         axis.title.y=element_blank(),
-        legend.position="none",
-        panel.background=element_blank(),
-        panel.border=element_blank(),
-        panel.grid.major=element_blank(),
-        panel.grid.minor=element_blank(),
-        panel.grid.major.x = element_line( size=.1, color="grey" ),
-        panel.grid.minor.x = element_line( size=.1, color="grey" ),
-        plot.title=element_text(size=25, hjust=0.5, face="bold", colour="grey", vjust=-1),
-        plot.subtitle=element_text(size=18, hjust=0.5, face="italic", color="grey"),
-        plot.caption =element_text(size=8, hjust=0.5, face="italic", color="grey"),
-        plot.background=element_blank(),
-       plot.margin = margin(2,2, 2, 4, "cm"))
+
+
+kable(top_10_pos%>% filter(positionCode=='L'),caption ="Top 10 Left Wing Scorers" )
+kable(top_10_pos%>% filter(positionCode=='R'),caption ="Top 10 Right Wing Scorers" )
+kable(top_10_pos%>% filter(positionCode=='C'),caption ="Top 10 Center Scorers" )
+kable(top_10_pos%>% filter(positionCode=='D'),caption ="Top 10 Defensive Scorers" )
+
 ```
 
 
+```{r PPG by Pick}
+points_draft<-summary_points %>% 
+  inner_join(draft,by = "playerId") %>%
+  filter(positionCode %in% c('L','R','C'),
+         seasons>1) %>%
+  group_by(overallPickNumber,positionCode) %>%
+  summarise(ppg=mean(ppg),N=n())
+
+ggplot(points_draft,aes(x=overallPickNumber,y=ppg))+
+  facet_wrap(~positionCode)+
+  geom_bar(stat='identity')+
+  geom_smooth()+
+  ggtitle('Average PPG by Overall Pick Number and Position',subtitle='Seasons>1, Nondefensemen') +
+  xlab('Pick number')+
+  ylab('Points Per Game')
+
+```
+
+
+```{r PPG vs Country}
+country<-summary_points %>% 
+  inner_join(draft,by = "playerId") %>%
+  filter(countryCode %in% c('CZE','FIN','RUS','SWE','USA','CAN'))
 
 
 
+ggplot(country %>% filter(seasons>1,countryCode %in% c('SWE','USA','CAN')),aes(y=ppg))+
+  facet_wrap(~countryCode)+
+  geom_boxplot()
+
+
+```
 
 
 
+```{r CareerPoints}
+country_player<-country %>%
+  inner_join(player,by=c("birthDate","firstName","height", "lastName"))
+
+ggplot(country_player %>% filter(seasons>1),aes(x=total_assists,y=total_goals,color=countryCode,shape=inHockeyHof))+
+  geom_point()+
+  geom_smooth(method='lm',se=FALSE,aes(group=countryCode))+
+  ggtitle('Career Points and Assists by Country and Presence in Hall of Fame')+
+  xlab('Career Assists')+
+  ylab('Career Points')
+  
+
+
+```
 
 
 
-
-
-
-
-
-
-
-
-
-1
-– You should create a new variable at some point
-– You should create some contingency tables and numeric summaries by some of your categorical
-variables
-– You should create some plots (at least a side-by-side bar plot, side-by-side box plots, and scatter
-plots with coloring)
-• Your code chunks should be shown in the final document unless they are set up chunks or other behind
-the scenes things that aren’t important.
