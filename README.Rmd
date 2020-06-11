@@ -8,17 +8,24 @@ output:
         toc_depth: 3
 ---
 
-
-
 # JSON
 ## What is it, where does it get used, and why is it a good way to store data? 
 
-JSON stands for Javascript Object Notation. It is a file type for storing and transferring data. It was originally invented in the early 2000's to help servers communicate with browsers. 
+JSON stands for Javascript Object Notation. It is a data format for storing and transferring data. It was invented in the early 2000's to help servers communicate with browser and is very commmonly used to transefer data through the web. 
 
+Here are some characteristics of JSON data.
 
-Lets look at some examples of a JSON objects!
+* JSON data is made up of JSON objects which contain pairs. 
+* Each object is wrapped by curly braces {}.
+* Each object is made of pairs of keys (strings) and values (string, number, or another object). 
+* Objects can be nested within one another and can be given IDs.
+* Pairs are separated by commas.
 
-This is what a JSON object typically looks like. Typically you can access each part of the JSON data by calling the name of the larger group, similair to a list in R. However, for us to work with this data in R we need to convert this  data in a usable format. 
+This is similair to a nested lists in R where we have names that we can call upon to access data. It is a great way to store data because the structure is understandble and because it is easy for machines to parse. Additionally JSON is made of text which allows for easy communication between different systems. For a more in depth video please [click on this text](https://www.youtube.com/watch?v=KdweixONFyA&vl=en)
+
+# Lets look at some examples of a JSON objects!
+
+This is what a JSON object typically looks like. Typically you can access each part of the JSON data by calling the name of the larger group, similair to a list in R. However, for us to work with this data in R we need to parse this data and convert it into a usable object. 
 
 ```{r JSON intro,warning=FALSE,message=FALSE}
 library(jsonlite)
@@ -31,38 +38,41 @@ print(json)
 
 ## What package should I use to read JSON data into R?
 
-There ae three main packages that read JSON data into R. 
+There are three main packages that read JSON data into R each having a function called fromJSON (JSON object to variable) and toJSON (variable to JSON object). 
 
 * rjson
+  * Slow.  
+  * Might be no longer in devleopment. Last update was in august of 2018.
 * RJSONIO
+  * Doenst handle null values as well.
+  * Mapping from R to JSON and back doesnt create identical objects. 
 * jsonlite
+  * Optimized for web and statistical data. 
 
-One of the major benefits of jsonlite is that it better maps JSON data into R into data types that are more heavely used such as dataframes, lists, and matrices Also, it is better in maintaining the way that missing values ae coded. It also provides more information than the other packages when an error occurs. JSON lite is also effecient, especially when compared to rjson.
+
+However, my preference is jsonlite because it works better with JSON data with nested lists and better maps data from R data types to JSON data and backwards. Jsonlite is also Jsonlite is also maintains how missing values are coded and provide more detail an error occurs. Jsonlite is also effecient, especially when compared to rjson. Using fromJSON we are able to convert the json object back into the orignal list of 3 lists.
 
 ```{r JSON library}
 json_data<-fromJSON(json,flatten=TRUE)
 print(json_data)
 ```
 
-Notice that jsonlite correctly maps the data to the original data structure (list of 3 lists.). Now that we have this data in a usable data structure we can use other tools to summarize and analyze the data. 
-
 
 ## What the puck. Lets look at some JSON data!
 
-Here are the packages that we will use to analyze our data.
+Here are the packages we need to analyze our data. The tidyverse package provides function that allow us to process, summarize, and vizualize data. Knitr will help us make pretty tables and httr will help us request data from the API. 
+
 ```{r setup,message=FALSE,warning=FALSE}
-library(devtools)
 library(tidyverse)
-library(httr)
 library(knitr)
+library(httr)
 ```
 
+We will be looking the data available from the [NHL records API](https://gitlab.com/dword4/nhlapi/-/blob/master/records-api.md). An API is a application program interface and is a collection of software that allows computers to communicate with one another. Think of how your browser (chrome, edge, firefox) follows a url to access information from a webpage. That webpage sends us HTML code that your computer breaks down into an interface. In this case, we want to use R to follow a URL to request data from the NHL records server. The text data returned from this survey is JSON structured. Using the above package we can then convert this data in a R dataframe, list, or tibble which we can analyze. APIs are helpful because they give us a means of large scale means of quickly requesting data in a reproducable manner that doesnt require webscraping (combing through HTML of webpages). We could likely find the information we want on a website but would have to copy and paste or creat a long program to do this from many websites. This is slow for us and would bombard the website servers with requests. However, servers dont have to send us fancy HTML when they send us JSON text. APIs are good for us and the NHL in this case. 
 
-We will be looking the data available from the [NHL records API](https://gitlab.com/dword4/nhlapi/-/blob/master/records-api.md).An API is a application program interface and is essentially software that allows computers to communicate with one another. Think of how your browser (chrome, edge, firefox) follows a url to access information from a webpage. That webpage sends us HTML code that your computer breaks down into an interface. In this case we want to use R to follow a URL to request data from the NHL records server. The text data returned from this survey is JSON structured. Using the above package we can then convert this data in a R dataframe, list, or tibble which we can analyze.
+API's usually have several paramaters that you can specify to access different information and filter data. The NHL records API has information on player records, team records, attendance, and draft information. We can also filter some of this information according to a specific team id we want to analyze.
 
-API's usually have several paramaters that you can specify to access different information. This API has several tables that you can access tha have information on player records, team records, attendance, and draft information. We can also filter some of this information according to a specific team id we want to analyze.
-
-Lets get aquanted with using an API. An API hase a base url that is used for all data requests and then has parameters we want to set. In this case we want to look at the New Jersey Devils which has a teamid of 1. Additiaonlly we want to look at the skater records for this franchise. After combining the text for this text, we use a the GET function to submit our request. Printing this request we are able to see a status code. A status coded of 200 means we requested data from a URL that exists. If you receive a 404 this means the URL was not found. 
+Lets get aquainted with using an API. An API hase a base url that is used for all data requests and then has parameters can set. In this case we want to look at the New Jersey Devils which has a teamid of 1. Lets also look at skater records for this franchise. After combining the text for the URL, we use a the GET function to submit our request to the server. Printing this request allows us to see the status code. A status coded of 200 means we our request was successful. If you receive a 404 this means the URL was not found. 
 
 ```{r example request}
 base_url <- 'https://records.nhl.com/site/api'
@@ -73,16 +83,16 @@ print(get_request)
 ```
 
 
-Now that we have this request we want to turn the request object into text. We do this by using the content function and specifying the output and encoding. Then we use fromJSON to convert the data into a usable object. The flatten option turns nested data frames into a single data frame. 
+Now we need to convert the request object into text. We do this by using the content function and specifying the output and encoding. Then we use fromJSON to convert the data into a usable object. The flatten option turns nested data frames into a single data frame. 
 
 ```{r example import}
 request_text<-content(get_request,"text",encoding='UTF-8')
 request_list<-fromJSON(request_text,flatten=TRUE)
 request_data<-request_list$data
-print(head(request_data,5))
+print(names(request_data))
 ```
 
-Now that we understand how APIs work, let's create a larger function to request multiple different tables from the API. We need to include error checks to make sure the user understands any request mistakes. We also use simplier table names to make the requesting data easier.
+We now understand how APIs work, and have requested our first data. Now lets write a larger function to request different tables from the API. We need to include error checks to make sure the user understands anymistakes. We also use simplier table names to make the requesting data easier.
 
 ```{r API function}
 get_nhl<-function(table='franchise',id=''){
@@ -100,14 +110,14 @@ get_nhl<-function(table='franchise',id=''){
   else if (id!='' & (!id %in% available_id)){
                 stop(paste("ERROR: The available id's are ",paste0(available_id,collapse=" ")))
   }
-
-  
   #This is the base URL for the API we want to access
   base_url <- 'https://records.nhl.com/site/api'
   #We then build a different url based upon the data table specified.
+  #extra processing
   if(table=='franchise'){
     build_url=paste0(base_url,'/franchise')
   }
+  #extra processing
   else if(table=='team-totals'){
     build_url=paste0(base_url,'/franchise-team-totals')
   }
@@ -121,30 +131,37 @@ get_nhl<-function(table='franchise',id=''){
     build_url=paste0(base_url,'/attendance')
   }
   
-  else if(table=='season-records' & id==''){
+  # Tables that you can specify id for. 
+  else if(table=='season-records'){
+    if (id==''){
     build_url=paste0(base_url,'/franchise-season-records')
-  }
-  else if(table=='goalie-records' & id==''){
-    build_url=paste0(base_url,'/franchise-goalie-records')
-  }
-  else if(table=='skater-records' & id==''){
-    build_url=paste0(base_url,'/franchise-skater-records')
-  }
-  
-  else if(table=='season-records' & id!=''){
+    }
+    else {
     build_url=paste0(base_url,'/franchise-season-records?cayenneExp=franchiseId=',id)
+    }
   }
-  else if(table=='goalie-records' & id!=''){
+  else if(table=='goalie-records'){
+    if (id==''){
+    build_url=paste0(base_url,'/franchise-goalie-records')
+    }
+    else {
     build_url=paste0(base_url,'/franchise-goalie-records?cayenneExp=franchiseId=',id)
-  }
-  else if(table=='skater-records' & id!=''){
+    }  
+    }
+  else if(table=='skater-records'){
+    if (id==''){
+    build_url=paste0(base_url,'/franchise-skater-records')
+    }
+    else {
     build_url=paste0(base_url,'/franchise-skater-records?cayenneExp=franchiseId=',id)
-  }
-  
+    }
+    }
+  #If we havent found a table then we should stop and tell the user to try one that is allowed.
   else {
     stop('ERROR: The available tables are "franchise","team-totals", "season-records", "goalie-records", "skater-records", "player","draft","attendance"')
   }
   get_request<-GET(build_url)
+  
   #Stop if the url request wa not to an acceptable UR?L. 
   if (get_request$status_code==404){
     stop('Status Code 404.\n Inccorect URL. This is likely due to askinig for an unavailable table.\n
@@ -153,14 +170,14 @@ get_nhl<-function(table='franchise',id=''){
   }
   request_text<-content(get_request,"text",encoding='UTF-8')
   request_list<-fromJSON(request_text,flatten=TRUE)
-  request_data<-request_list$data
+  request_data<-as.tibble(request_list$data)
   return(request_data)
 }
 ```
 
 Let's request all the data from all the tables the above function can request. We dont have to specify a table for the franchise table because this is the default. 
 
-```{r table}
+```{r rquesting tables}
 franchise<-get_nhl()
 team_totals<-get_nhl(table='team-totals')
 draft<-get_nhl(table='draft')
@@ -169,20 +186,47 @@ player<-get_nhl(table='player')
 rec_season<-get_nhl('season-records')
 rec_goalie<-get_nhl('goalie-records')
 rec_skater<-get_nhl('skater-records')
+
+#Showing this works for the grader. 
+get_nhl('season-records')
+get_nhl('goalie-records')
+get_nhl('skater-records')
 ```
 
-Not we want to request the
+# What data is available and how much?
 
+```{r data structure}
+str(franchise)
+str(team_totals)
+str(draft)
+str(attendance)
+str(player)
+str(rec_season)
+str(rec_goalie)
+str(rec_skater)
+```
 
 # Grahs and Visualizations
 
 ## Top 10 
 
-Now that we have looked at our data lets view some graphs to identify trends. The rec_skater dataframe may has multiple records for the same player. Lets calcualte some summary statistics for the total points, assists, penalty minutes, games played, and other information. 
+Now that we have lots of data lets view make some graphs to identify differnt trends. The rec_skater dataframe may has multiple records for the same player. The below code allows us to see how many players have multiple records in our dataset. Using our second line we are able to see that there are 0 occurences of multiple records of a player for the same team. So we need to sum these statsitics accross each team. 
+
 ```{r}
+print(sum(table(rec_skater$playerId)>1))
+print(sum(table(rec_skater$playerId,rec_skater$franchiseId)>1))
+
+```
+
+Lets calcualte some summary statistics for the total points, assists, penalty minutes, games played, and other information.
+
+```{r summarizing career stats}
+
 summary_points<-rec_skater %>%
   mutate(full_name=paste(firstName,lastName)) %>%
+  # we want to keep the player name, position code, id, and wether the player is active for further analysis.
   group_by(playerId,full_name,activePlayer,positionCode) %>%
+  # Lets calculate career totals for all of the players. 
   summarise(seasons=sum(seasons),
             total_points=sum(points),
             games_played=sum(gamesPlayed),
@@ -190,17 +234,28 @@ summary_points<-rec_skater %>%
             penaltyMinutes=sum(penaltyMinutes),
             total_assists=sum(assists),
             total_goals=sum(goals)) %>%
+  #Calculating the points per game and creating a label for the upcoming graph.
   mutate(ppg=round(total_points/games_played,2),
          ppg_label=paste(as.character(ppg),'ppg')) %>%
+  # Sorting the data so we know the top 10 scorers. 
   arrange(desc(total_points))
+
+print(head(summary_points))
 ```
 
-Lets look at the players who have the most points scored(goals+assists) of all times. Also lets look at effeciency by adding text that has the points per game for each player .
+Lets look at the players who have the most points scored(goals+assists) of all times. Also lets look at effeciency by adding text that has the points per game for each player. Its amazing to me how much more effecient and productive wayne gretsky was. Even amongst the best players in NHL history he clearly stands out from the pack. 
+
 ```{r top 10 points}
+# We filter the data so we only see the top 10 scoreres
+# We also reorder the data so that the grph is in descending order of total points
 ggplot(summary_points %>% head(10),aes(x=reorder(full_name,total_points),y=total_points))+
+  #Creating bar graph
   geom_col()+ 
+  #Flipping columns to rows
   coord_flip()+
+  #Adding text containing points per game
   geom_text(aes(label=ppg_label), position=position_dodge(width=0.9), hjust=1.2,vjust=.2)+
+  #Adding title and labelel
   ylab('Points Scored')+
   xlab('Player')+
   ggtitle('Top 10 Points Scored All Time')
@@ -214,14 +269,15 @@ Next lets break some of the information accross position. Lets group out data by
 top_10_pos<-summary_points %>%
   group_by(positionCode) %>%
   top_n(10,wt=total_points)%>%
-  select(positionCode,full_name,total_points,ppg,total_assists,total_goals) 
+  select(positionCode,full_name,total_points,ppg,total_assists,total_goals) %>%
+  mutate(goal_assist_rat=total_goals/total_assists)
 
-kable(top_10_pos%>% filter(positionCode=='L') %>% select(-positionCode),caption ="Top 10 Left Wing Scorers" )
-kable(top_10_pos%>% filter(positionCode=='R') %>% select(-positionCode),caption ="Top 10 Right Wing Scorers" )
-kable(top_10_pos%>% filter(positionCode=='C') %>% select(-positionCode),caption ="Top 10 Center Scorers" )
-kable(top_10_pos%>% filter(positionCode=='D') %>% select(-positionCode),caption ="Top 10 Defensive Scorers" )
-
+kable(top_10_pos %>% filter(positionCode=='L') %>% ungroup() %>% select(-positionCode),caption ="Top 10 Left Wing Scorers" )
+kable(top_10_pos %>% filter(positionCode=='R') %>% ungroup() %>% select(-positionCode),caption ="Top 10 Right Wing Scorers" )
+kable(top_10_pos %>% filter(positionCode=='C') %>% ungroup() %>% select(-positionCode),caption ="Top 10 Center Scorers" )
+kable(top_10_pos %>% filter(positionCode=='D') %>% ungroup() %>% select(-positionCode),caption ="Top 10 Defensive Scorers")
 ```
+Wayne is still looking more incredible from this data. While his number of goals is greater than his nearest scorer by %28 his number of assists is %64 greater! He must have been great at setting up his teammates and an excellent passer. Also it looks like there are higher goals/points ratios for left and right forward positions compared to the center positon. 
 
 ## Performance by Draft Pick
 
@@ -237,7 +293,7 @@ points_draft<-summary_points %>%
 ```
 
 
-We create a bar chart to view the ppg for each pick and each player. Notably to identify the trend lines lets add the geom_smooth 
+We create a bar chart to view the ppg for each pick and each player. To dentify the trend lines lets add the geom_smooth. Its interesting to see the same trend by forward position. It seems that drafting one position over another might not be beneficial. However, another measure like win shares might better analyze this decision. Also It seems that picks past 60 all begin to have similair value in terms of ppg . 
 
 ```{r PPG by Pick}
 ggplot(points_draft,aes(x=overallPickNumber,y=ppg))+
@@ -250,15 +306,18 @@ ggplot(points_draft,aes(x=overallPickNumber,y=ppg))+
 
 ```
 
-How many people are drafted from each differnt country? We do this by using the table command on the county code variable to count the number of players. Then we use the kable funciton to make it more pretty. 
+How many people are drafted from each differnt country? We do this by using the table command on the county code variable to count the number of players. Then we use the kable funciton to make it more pretty. There are over twice as many candaians playing in the NHL compared to americans! It seems like some rebranding is necessary given 7 of the 31 candian teams and the majority of players are from another country. 
 
 ## Number of Players by Country
 
 ```{r contingency table}
-table(draft$countryCode) %>%kable()
+table(draft$countryCode) %>%
+  sort() %>%
+  tail(10) %>% 
+  kable()
 ```
 
-We can also see how the number of players has changed from year to year by graphing the number of usa born and foreign born players over time. I am a NBA fan so I wondered if similarly we would see an increase of foreign born plavers over time. However, it seems clear that foreign born players are drafted more frequentyly. Additionally, the number of foreign born players looks to be more correlated with the total number of draft picks than is the number of us born players. 
+We can also see how the number of players has changed from year to year by graphing the number of usa born and foreign born players over time. I am a NBA fan so I wondered if similarly we would see an increase of foreign born plavers over time. However, it seems clear that foreign born players are drafted more frequentyly. Additionally, the number of foreign born players looks to be more correlated with the total number of draft picks than is the number of us born players. Also when there was an increase in draft pick it looks like franchises were more likely to seek out foreign players than domestic players. 
 
 ```{r drafted by country}
 draft_group<-draft %>%
@@ -285,31 +344,34 @@ ggplot(draft_country,aes(x=draftYear,color=foreign))+
 ```
 
 Are players from any one nation better? We then compae the distribution of pgg using boxplots. The three distibutions look largely similair. There appear to be more canadian players with a high points per game compared to sweden or the united states. However, it should be noted that there are many more canadian players than sweden or u.s. players. 
+
 ```{r PPG vs Country}
-country<-summary_points %>% 
+summary_draft<-summary_points %>% 
   inner_join(draft,by = "playerId") %>%
   filter(countryCode %in% c('CZE','FIN','RUS','SWE','USA','CAN'))
 
-
-ggplot(country %>% filter(seasons>1,countryCode %in% c('SWE','USA','CAN')),aes(y=ppg))+
+ggplot(summary_draft %>% filter(seasons>1,countryCode %in% c('SWE','USA','CAN')),aes(y=ppg))+
   facet_wrap(~countryCode)+
   geom_boxplot()
 
 ```
 
-Lastly, lets look at the number of goals and assists by country of origin. Also, we can include the presence in the hockey hall of fame by using a third dimension that shows through the shape of the point.  
+Lastly, lets look at the number of goals and assists by country of origin. Also, we can include the presence in the hockey hall of fame by using a third dimension that shows through the shape of the point. Unsurprisingly, it looks like the more hall of famers are from canada. Also, one czech player looks to have some amazing career totals but isnt in the hall of fame. I looked him up and	Jaromir Jagr is not yet elligble for the hall of fame but will be inducted.  Most of the countries have the same trendline for career assists and goals. Sweden looks like on average they score more assists than goals. However, it seems likely that this could be affected by a few outliers. So we then calcualte the average assist to goals ratio for players with at least 5 assists and 5 goals. It looks like swedes tend to have higher assist to goal ratios.  
 
 ```{r CareerPoints}
-country_player<-country%>%
+country_summary<-summary_draft%>%
   inner_join(player,by=c("birthDate","firstName","height", "lastName"))
 
-ggplot(country_player %>% filter(seasons>1),aes(x=total_assists,y=total_goals,color=countryCode,shape=inHockeyHof))+
+ggplot(country_summary %>% filter(seasons>1),aes(x=total_assists,y=total_goals,color=countryCode,shape=inHockeyHof))+
   geom_point()+
   geom_smooth(method='lm',se=FALSE,aes(group=countryCode))+
   ggtitle('Career Points and Assists by Country and Presence in Hall of Fame')+
   xlab('Career Assists')+
-  ylab('Career Points')
+  ylab('Career Goals')
 
+country_summary %>% filter(total_assists>5 & total_goals>5) %>% mutate(agr=total_assists/total_goals) %>% group_by(countryCode) %>% summarise(avg_assis_goal_rat=mean(agr,na.rm=TRUE)) %>% kable(title='Average Assist to Goal ratio by County')
+
+country_summary %>% filter(countryCode=='CZE') %>% arrange(desc(total_points)) %>% select(total_points,inHockeyHof,activePlayer,draftYear) %>% head(3)
 ```
 
 
