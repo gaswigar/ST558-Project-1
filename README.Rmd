@@ -13,7 +13,7 @@ output:
 
 JSON stands for Javascript Object Notation. It is a data format for storing and transferring data. It was invented in the early 2000's to help servers communicate with browser and is very commmonly used to transefer data through the web. 
 
-Here are some characteristics of JSON data.
+Here are some characteristics of JSON data:
 
 * JSON data is made up of JSON objects which contain pairs. 
 * Each object is wrapped by curly braces {}.
@@ -25,7 +25,7 @@ This is similair to a nested lists in R where we have names that we can call upo
 
 # Lets look at some examples of a JSON objects!
 
-This is what a JSON object typically looks like. Typically you can access each part of the JSON data by calling the name of the larger group, similair to a list in R. However, for us to work with this data in R we need to parse this data and convert it into a usable object. 
+The printed text below is what a JSON object looks like. For us to work with this data in R we need to parse this data and convert it into a usable object. 
 
 ```{r JSON intro,warning=FALSE,message=FALSE}
 library(jsonlite)
@@ -44,13 +44,15 @@ There are three main packages that read JSON data into R each having a function 
   * Slow.  
   * Might be no longer in devleopment. Last update was in august of 2018.
 * RJSONIO
-  * Doenst handle null values as well.
-  * Mapping from R to JSON and back doesnt create identical objects. 
+  * Doesnt handle null values as well.
+  * Mapping from R to JSON and back does not create identical objects. 
 * jsonlite
   * Optimized for web and statistical data. 
 
 
-However, my preference is jsonlite because it works better with JSON data with nested lists and better maps data from R data types to JSON data and backwards. Jsonlite is also Jsonlite is also maintains how missing values are coded and provide more detail an error occurs. Jsonlite is also effecient, especially when compared to rjson. Using fromJSON we are able to convert the json object back into the orignal list of 3 lists.
+My preference is jsonlite because it works better with JSON data with nested lists and better maps R data types to JSON data and backwards. Jsonlite also maintains how missing values are coded and provides more details when errors occur. Jsonlite is also effecient, especially when compared to rjson. 
+
+Using fromJSON we are able to convert the json object back into the orignal list of 3 lists.
 
 ```{r JSON library}
 json_data<-fromJSON(json,flatten=TRUE)
@@ -58,7 +60,7 @@ print(json_data)
 ```
 
 
-## What the puck. Lets look at some JSON data!
+## Lets look at some JSON data!
 
 Here are the packages we need to analyze our data. The tidyverse package provides function that allow us to process, summarize, and vizualize data. Knitr will help us make pretty tables and httr will help us request data from the API. 
 
@@ -83,7 +85,7 @@ print(get_request)
 ```
 
 
-Now we need to convert the request object into text. We do this by using the content function and specifying the output and encoding. Then we use fromJSON to convert the data into a usable object. The flatten option turns nested data frames into a single data frame. 
+Now we need to convert the request object into text. We do this by using the content function and specifying the output format and encoding. Then we use fromJSON to convert the data into a usable object. The flatten option turns nested data frames into a single data frame. The request_list object is a list containing two elements. The first is named "data" and contains our data while the second is called "total" telling us the number of records received. 
 
 ```{r example import}
 request_text<-content(get_request,"text",encoding='UTF-8')
@@ -168,14 +170,16 @@ get_nhl<-function(table='franchise',id=''){
         These are tha available tables. Use the "franchise" table to find the list of franchise ids.
          "team-totals","season-records","goalie-records","skater-records","player","draft","attendance"')
   }
+  #parsing the data 
   request_text<-content(get_request,"text",encoding='UTF-8')
   request_list<-fromJSON(request_text,flatten=TRUE)
-  request_data<-as.tibble(request_list$data)
+  request_data<-as_tibble(request_list$data)
+  #returning the correct tibble
   return(request_data)
 }
 ```
 
-Let's request all the data from all the tables the above function can request. We dont have to specify a table for the franchise table because this is the default. 
+Let's request all the data from all the tables the above function can request. We dont have to specify a table for the franchise table because this is the default.
 
 ```{r rquesting tables}
 franchise<-get_nhl()
@@ -188,9 +192,9 @@ rec_goalie<-get_nhl('goalie-records')
 rec_skater<-get_nhl('skater-records')
 
 #Showing this works for the grader. 
-get_nhl('season-records')
-get_nhl('goalie-records')
-get_nhl('skater-records')
+print(get_nhl('season-records',1))
+print(get_nhl('goalie-records',1))
+print(get_nhl('skater-records',1))
 ```
 
 # What data is available and how much?
@@ -210,7 +214,7 @@ str(rec_skater)
 
 ## Top 10 
 
-Now that we have lots of data lets view make some graphs to identify differnt trends. The rec_skater dataframe may has multiple records for the same player. The below code allows us to see how many players have multiple records in our dataset. Using our second line we are able to see that there are 0 occurences of multiple records of a player for the same team. So we need to sum these statsitics accross each team. 
+Now that we have lots of data, lets make some graphs to identify trends. The rec_skater dataframe may has multiple records for the same player. The below code allows us to see how many players have multiple records in our dataset. Using our second line we are able to see that there are 0 occurences of multiple records of a player for the same team. So we need to sum these statsitics accross each team. 
 
 ```{r}
 print(sum(table(rec_skater$playerId)>1))
@@ -277,6 +281,7 @@ kable(top_10_pos %>% filter(positionCode=='R') %>% ungroup() %>% select(-positio
 kable(top_10_pos %>% filter(positionCode=='C') %>% ungroup() %>% select(-positionCode),caption ="Top 10 Center Scorers" )
 kable(top_10_pos %>% filter(positionCode=='D') %>% ungroup() %>% select(-positionCode),caption ="Top 10 Defensive Scorers")
 ```
+
 Wayne is still looking more incredible from this data. While his number of goals is greater than his nearest scorer by %28 his number of assists is %64 greater! He must have been great at setting up his teammates and an excellent passer. Also it looks like there are higher goals/points ratios for left and right forward positions compared to the center positon. 
 
 ## Performance by Draft Pick
@@ -306,14 +311,23 @@ ggplot(points_draft,aes(x=overallPickNumber,y=ppg))+
 
 ```
 
-How many people are drafted from each differnt country? We do this by using the table command on the county code variable to count the number of players. Then we use the kable funciton to make it more pretty. There are over twice as many candaians playing in the NHL compared to americans! It seems like some rebranding is necessary given 7 of the 31 candian teams and the majority of players are from another country. 
+How many people are drafted from each differnt country? We do this by using the table command on the county code variable to count the number of players. Then we use the kable funciton to make it more pretty. There are over twice as many candaians playing in the NHL compared to americans! It seems like some rebranding is necessary given 7 of the 31 candian teams and the majority of players are from another country. Also it looks like defensemen are drafted more frequently than other positions which is not surprising given this is technically 3 players from what I know. 
 
 ## Number of Players by Country
 
 ```{r contingency table}
-table(draft$countryCode) %>%
+#creating a vector of top 10 most drafted countries
+top_10_countries<-table(draft$countryCode) %>%
   sort() %>%
-  tail(10) %>% 
+  tail(10) %>%
+  c()
+
+draft_10_countries<-draft %>% 
+  filter(countryCode %in% names(top_10_countries),
+         str_detect(position,'/')==FALSE) #Removing players of dual positons
+
+table_county_position_code<-table(draft_10_countries$countryCode,
+                                  draft_10_countries$position) %>%
   kable()
 ```
 
@@ -356,7 +370,7 @@ ggplot(summary_draft %>% filter(seasons>1,countryCode %in% c('SWE','USA','CAN'))
 
 ```
 
-Lastly, lets look at the number of goals and assists by country of origin. Also, we can include the presence in the hockey hall of fame by using a third dimension that shows through the shape of the point. Unsurprisingly, it looks like the more hall of famers are from canada. Also, one czech player looks to have some amazing career totals but isnt in the hall of fame. I looked him up and	Jaromir Jagr is not yet elligble for the hall of fame but will be inducted.  Most of the countries have the same trendline for career assists and goals. Sweden looks like on average they score more assists than goals. However, it seems likely that this could be affected by a few outliers. So we then calcualte the average assist to goals ratio for players with at least 5 assists and 5 goals. It looks like swedes tend to have higher assist to goal ratios.  
+Lastly, lets look at the number of goals and assists by country of origin. Also, we can include the presence in the hockey hall of fame by using a third dimension that shows through the shape of the point. Unsurprisingly, it looks like the more hall of famers are from canada. Also, one czech player looks to have some amazing career totals but isnt in the hall of fame. I looked him up and	Jaromir Jagr is not yet elligble for the hall of fame but will surely be inducted.  Most of the countries have the same trendline for career assists and goals. Sweden looks like on average they score more assists than goals. However, it seems likely that this could be affected by a few outliers. So we then calcualte the average assist to goals ratio for players with at least 5 assists and 5 goals. It looks like swedes tend to have higher assist to goal ratios.  
 
 ```{r CareerPoints}
 country_summary<-summary_draft%>%
@@ -373,6 +387,8 @@ country_summary %>% filter(total_assists>5 & total_goals>5) %>% mutate(agr=total
 
 country_summary %>% filter(countryCode=='CZE') %>% arrange(desc(total_points)) %>% select(total_points,inHockeyHof,activePlayer,draftYear) %>% head(3)
 ```
+
+
 
 
 

@@ -11,8 +11,7 @@ Grant Swigart
     objects\!](#lets-look-at-some-examples-of-a-json-objects)
       - [What package should I use to read JSON data into
         R?](#what-package-should-i-use-to-read-json-data-into-r)
-      - [What the puck. Lets look at some JSON
-        data\!](#what-the-puck.-lets-look-at-some-json-data)
+      - [Lets look at some JSON data\!](#lets-look-at-some-json-data)
   - [What data is available and how
     much?](#what-data-is-available-and-how-much)
   - [Grahs and Visualizations](#grahs-and-visualizations)
@@ -31,11 +30,14 @@ storing and transferring data. It was invented in the early 2000’s to
 help servers communicate with browser and is very commmonly used to
 transefer data through the web.
 
-Here are some characteristics of JSON data. \* JSON data is made up of
-JSON objects which contain pairs. \* Each object is wrapped by curly
-braces {}. \* Each object is made of pairs of keys (strings) and values
-(string, number, or another object). \* Objects can be nested within one
-another and can be given IDs. \* Pairs are separated by commas.
+Here are some characteristics of JSON data:
+
+  - JSON data is made up of JSON objects which contain pairs.
+  - Each object is wrapped by curly braces {}.
+  - Each object is made of pairs of keys (strings) and values (string,
+    number, or another object).
+  - Objects can be nested within one another and can be given IDs.
+  - Pairs are separated by commas.
 
 This is similair to a nested lists in R where we have names that we can
 call upon to access data. It is a great way to store data because the
@@ -46,10 +48,9 @@ this text](https://www.youtube.com/watch?v=KdweixONFyA&vl=en)
 
 # Lets look at some examples of a JSON objects\!
 
-This is what a JSON object typically looks like. Typically you can
-access each part of the JSON data by calling the name of the larger
-group, similair to a list in R. However, for us to work with this data
-in R we need to parse this data and convert it into a usable object.
+The printed text below is what a JSON object looks like. For us to work
+with this data in R we need to parse this data and convert it into a
+usable object.
 
 ``` r
 library(jsonlite)
@@ -86,18 +87,20 @@ to JSON object).
       - Might be no longer in devleopment. Last update was in august of
         2018.
   - RJSONIO
-      - Doenst handle null values as well.
-      - Mapping from R to JSON and back doesnt create identical objects.
+      - Doesnt handle null values as well.
+      - Mapping from R to JSON and back does not create identical
+        objects.
   - jsonlite
       - Optimized for web and statistical data.
 
-However, my preference is jsonlite because it works better with JSON
-data with nested lists and better maps data from R data types to JSON
-data and backwards. Jsonlite is also Jsonlite is also maintains how
-missing values are coded and provide more detail an error occurs.
-Jsonlite is also effecient, especially when compared to rjson. Using
-fromJSON we are able to convert the json object back into the orignal
-list of 3 lists.
+My preference is jsonlite because it works better with JSON data with
+nested lists and better maps R data types to JSON data and backwards.
+Jsonlite also maintains how missing values are coded and provides more
+details when errors occur. Jsonlite is also effecient, especially when
+compared to rjson.
+
+Using fromJSON we are able to convert the json object back into the
+orignal list of 3 lists.
 
 ``` r
 json_data<-fromJSON(json,flatten=TRUE)
@@ -127,7 +130,7 @@ print(json_data)
     ## $Gordie$last_name
     ## [1] "Howe"
 
-## What the puck. Lets look at some JSON data\!
+## Lets look at some JSON data\!
 
 Here are the packages we need to analyze our data. The tidyverse package
 provides function that allow us to process, summarize, and vizualize
@@ -183,15 +186,18 @@ print(get_request)
 ```
 
     ## Response [https://records.nhl.com/site/api/franchise-skater-records?cayenneExp=franchiseId=1]
-    ##   Date: 2020-06-11 15:40
+    ##   Date: 2020-06-13 02:41
     ##   Status: 200
     ##   Content-Type: application/json
     ##   Size: 1.07 MB
 
 Now we need to convert the request object into text. We do this by using
-the content function and specifying the output and encoding. Then we use
-fromJSON to convert the data into a usable object. The flatten option
-turns nested data frames into a single data frame.
+the content function and specifying the output format and encoding. Then
+we use fromJSON to convert the data into a usable object. The flatten
+option turns nested data frames into a single data frame. The
+request\_list object is a list containing two elements. The first is
+named “data” and contains our data while the second is called “total”
+telling us the number of records received.
 
 ``` r
 request_text<-content(get_request,"text",encoding='UTF-8')
@@ -296,9 +302,11 @@ get_nhl<-function(table='franchise',id=''){
         These are tha available tables. Use the "franchise" table to find the list of franchise ids.
          "team-totals","season-records","goalie-records","skater-records","player","draft","attendance"')
   }
+  #parsing the data 
   request_text<-content(get_request,"text",encoding='UTF-8')
   request_list<-fromJSON(request_text,flatten=TRUE)
-  request_data<-as.tibble(request_list$data)
+  request_data<-as_tibble(request_list$data)
+  #returning the correct tibble
   return(request_data)
 }
 ```
@@ -309,15 +317,6 @@ this is the default.
 
 ``` r
 franchise<-get_nhl()
-```
-
-    ## Warning: `as.tibble()` is deprecated as of tibble 2.0.0.
-    ## Please use `as_tibble()` instead.
-    ## The signature and semantics have changed, see `?as_tibble`.
-    ## This warning is displayed once every 8 hours.
-    ## Call `lifecycle::last_warnings()` to see where this warning was generated.
-
-``` r
 team_totals<-get_nhl(table='team-totals')
 draft<-get_nhl(table='draft')
 attendance<-get_nhl(table='attendance')
@@ -325,7 +324,94 @@ player<-get_nhl(table='player')
 rec_season<-get_nhl('season-records')
 rec_goalie<-get_nhl('goalie-records')
 rec_skater<-get_nhl('skater-records')
+
+#Showing this works for the grader. 
+print(get_nhl('season-records',1))
 ```
+
+    ## # A tibble: 1 x 57
+    ##      id fewestGoals fewestGoalsAgai~ fewestGoalsAgai~ fewestGoalsSeas~
+    ##   <int>       <int>            <int> <chr>            <chr>           
+    ## 1     8         155              131 1955-56 (70)     1952-53 (70)    
+    ## # ... with 52 more variables: fewestLosses <int>,
+    ## #   fewestLossesSeasons <chr>, fewestPoints <int>,
+    ## #   fewestPointsSeasons <chr>, fewestTies <int>, fewestTiesSeasons <chr>,
+    ## #   fewestWins <int>, fewestWinsSeasons <chr>, franchiseId <int>,
+    ## #   franchiseName <chr>, homeLossStreak <int>, homeLossStreakDates <chr>,
+    ## #   homePointStreak <int>, homePointStreakDates <chr>,
+    ## #   homeWinStreak <int>, homeWinStreakDates <chr>,
+    ## #   homeWinlessStreak <int>, homeWinlessStreakDates <chr>,
+    ## #   lossStreak <int>, lossStreakDates <chr>, mostGameGoals <int>,
+    ## #   mostGameGoalsDates <chr>, mostGoals <int>, mostGoalsAgainst <int>,
+    ## #   mostGoalsAgainstSeasons <chr>, mostGoalsSeasons <chr>,
+    ## #   mostLosses <int>, mostLossesSeasons <chr>, mostPenaltyMinutes <int>,
+    ## #   mostPenaltyMinutesSeasons <chr>, mostPoints <int>,
+    ## #   mostPointsSeasons <chr>, mostShutouts <int>,
+    ## #   mostShutoutsSeasons <chr>, mostTies <int>, mostTiesSeasons <chr>,
+    ## #   mostWins <int>, mostWinsSeasons <chr>, pointStreak <int>,
+    ## #   pointStreakDates <chr>, roadLossStreak <int>,
+    ## #   roadLossStreakDates <chr>, roadPointStreak <int>,
+    ## #   roadPointStreakDates <chr>, roadWinStreak <int>,
+    ## #   roadWinStreakDates <chr>, roadWinlessStreak <int>,
+    ## #   roadWinlessStreakDates <chr>, winStreak <int>, winStreakDates <chr>,
+    ## #   winlessStreak <int>, winlessStreakDates <chr>
+
+``` r
+print(get_nhl('goalie-records',1))
+```
+
+    ## # A tibble: 37 x 29
+    ##       id activePlayer firstName franchiseId franchiseName gameTypeId
+    ##    <int> <lgl>        <chr>           <int> <chr>              <int>
+    ##  1   261 FALSE        Patrick             1 Montréal Can~          2
+    ##  2   294 TRUE         Carey               1 Montréal Can~          2
+    ##  3   296 FALSE        Jacques             1 Montréal Can~          2
+    ##  4   327 FALSE        George              1 Montréal Can~          2
+    ##  5   414 FALSE        Stephane            1 Montréal Can~          2
+    ##  6   437 FALSE        Jeff                1 Montréal Can~          2
+    ##  7   450 FALSE        Brian               1 Montréal Can~          2
+    ##  8   457 FALSE        Denis               1 Montréal Can~          2
+    ##  9   469 FALSE        Pat                 1 Montréal Can~          2
+    ## 10   511 FALSE        Roland              1 Montréal Can~          2
+    ## # ... with 27 more rows, and 23 more variables: gamesPlayed <int>,
+    ## #   lastName <chr>, losses <int>, mostGoalsAgainstDates <chr>,
+    ## #   mostGoalsAgainstOneGame <int>, mostSavesDates <chr>,
+    ## #   mostSavesOneGame <int>, mostShotsAgainstDates <chr>,
+    ## #   mostShotsAgainstOneGame <int>, mostShutoutsOneSeason <int>,
+    ## #   mostShutoutsSeasonIds <chr>, mostWinsOneSeason <int>,
+    ## #   mostWinsSeasonIds <chr>, overtimeLosses <int>, playerId <int>,
+    ## #   positionCode <chr>, rookieGamesPlayed <int>, rookieShutouts <int>,
+    ## #   rookieWins <int>, seasons <int>, shutouts <int>, ties <int>,
+    ## #   wins <int>
+
+``` r
+print(get_nhl('skater-records',1))
+```
+
+    ## # A tibble: 788 x 30
+    ##       id activePlayer assists firstName franchiseId franchiseName
+    ##    <int> <lgl>          <int> <chr>           <int> <chr>        
+    ##  1 16891 FALSE            712 Jean                1 Montréal Can~
+    ##  2 16911 FALSE            688 Henri               1 Montréal Can~
+    ##  3 16990 FALSE            422 Maurice             1 Montréal Can~
+    ##  4 17000 FALSE            728 Guy                 1 Montréal Can~
+    ##  5 17025 FALSE             87 Chris               1 Montréal Can~
+    ##  6 17054 FALSE            368 Steve               1 Montréal Can~
+    ##  7 17074 FALSE            346 Peter               1 Montréal Can~
+    ##  8 17138 FALSE            369 Mats                1 Montréal Can~
+    ##  9 17191 FALSE            686 Larry               1 Montréal Can~
+    ## 10 17199 FALSE              0 Reg                 1 Montréal Can~
+    ## # ... with 778 more rows, and 24 more variables: gameTypeId <int>,
+    ## #   gamesPlayed <int>, goals <int>, lastName <chr>,
+    ## #   mostAssistsGameDates <chr>, mostAssistsOneGame <int>,
+    ## #   mostAssistsOneSeason <int>, mostAssistsSeasonIds <chr>,
+    ## #   mostGoalsGameDates <chr>, mostGoalsOneGame <int>,
+    ## #   mostGoalsOneSeason <int>, mostGoalsSeasonIds <chr>,
+    ## #   mostPenaltyMinutesOneSeason <int>, mostPenaltyMinutesSeasonIds <chr>,
+    ## #   mostPointsGameDates <chr>, mostPointsOneGame <int>,
+    ## #   mostPointsOneSeason <int>, mostPointsSeasonIds <chr>,
+    ## #   penaltyMinutes <int>, playerId <int>, points <int>,
+    ## #   positionCode <chr>, rookiePoints <int>, seasons <int>
 
 # What data is available and how much?
 
@@ -634,12 +720,12 @@ str(rec_skater)
 
 ## Top 10
 
-Now that we have lots of data lets view make some graphs to identify
-differnt trends. The rec\_skater dataframe may has multiple records for
-the same player. The below code allows us to see how many players have
-multiple records in our dataset. Using our second line we are able to
-see that there are 0 occurences of multiple records by of a player for
-the same team.
+Now that we have lots of data, lets make some graphs to identify trends.
+The rec\_skater dataframe may has multiple records for the same player.
+The below code allows us to see how many players have multiple records
+in our dataset. Using our second line we are able to see that there are
+0 occurences of multiple records of a player for the same team. So we
+need to sum these statsitics accross each team.
 
 ``` r
 print(sum(table(rec_skater$playerId)>1))
@@ -648,7 +734,7 @@ print(sum(table(rec_skater$playerId)>1))
     ## [1] 4190
 
 ``` r
-sum(table(rec_skater$playerId,rec_skater$franchiseId)>1)
+print(sum(table(rec_skater$playerId,rec_skater$franchiseId)>1))
 ```
 
     ## [1] 0
@@ -789,21 +875,27 @@ Top 10 Center Scorers
 kable(top_10_pos %>% filter(positionCode=='D') %>% ungroup() %>% select(-positionCode),caption ="Top 10 Defensive Scorers")
 ```
 
-| full\_name          |   total\_points |     ppg |   total\_assists |   total\_goals |                                                                                                                                                                                                                                                                                   goal\_assist\_rat |
-| :------------------ | --------------: | ------: | ---------------: | -------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| Ray Bourque         |            1579 |    0.98 |             1169 |            410 |                                                                                                                                                                                                                                                                                           0.3507271 |
-| Paul Coffey         |            1531 |    1.09 |             1135 |            396 |                                                                                                                                                                                                                                                                                           0.3488987 |
-| Al MacInnis         |            1274 |    0.90 |              934 |            340 |                                                                                                                                                                                                                                                                                           0.3640257 |
-| Phil Housley        |            1232 |    0.82 |              894 |            338 |                                                                                                                                                                                                                                                                                           0.3780761 |
-| Larry Murphy        |            1217 |    0.75 |              929 |            288 |                                                                                                                                                                                                                                                                                           0.3100108 |
-| Nicklas Lidstrom    |            1142 |    0.73 |              878 |            264 |                                                                                                                                                                                                                                                                                           0.3006834 |
-| Denis Potvin        |            1052 |    0.99 |              742 |            310 |                                                                                                                                                                                                                                                                                           0.4177898 |
-| Brian Leetch        |            1028 |    0.85 |              781 |            247 |                                                                                                                                                                                                                                                                                           0.3162612 |
-| Larry Robinson      |             958 |    0.69 |              750 |            208 |                                                                                                                                                                                                                                                                                           0.2773333 |
-| Chris Chelios       |             948 |    0.57 |              763 |            185 |                                                                                                                                                                                                                                                                                           0.2424640 |
-| Wayne is still look | ing more incred | ible fr | om this data. Wh | ile his number | of goals is greater than his nearest scorer by %28 his number of assists is %64 greater\! He must have been great at setting up his teammates and an excellent passer. Also it looks like there are higher goals/points ratios for left and right forward positions compared to the center positon. |
+| full\_name       | total\_points |  ppg | total\_assists | total\_goals | goal\_assist\_rat |
+| :--------------- | ------------: | ---: | -------------: | -----------: | ----------------: |
+| Ray Bourque      |          1579 | 0.98 |           1169 |          410 |         0.3507271 |
+| Paul Coffey      |          1531 | 1.09 |           1135 |          396 |         0.3488987 |
+| Al MacInnis      |          1274 | 0.90 |            934 |          340 |         0.3640257 |
+| Phil Housley     |          1232 | 0.82 |            894 |          338 |         0.3780761 |
+| Larry Murphy     |          1217 | 0.75 |            929 |          288 |         0.3100108 |
+| Nicklas Lidstrom |          1142 | 0.73 |            878 |          264 |         0.3006834 |
+| Denis Potvin     |          1052 | 0.99 |            742 |          310 |         0.4177898 |
+| Brian Leetch     |          1028 | 0.85 |            781 |          247 |         0.3162612 |
+| Larry Robinson   |           958 | 0.69 |            750 |          208 |         0.2773333 |
+| Chris Chelios    |           948 | 0.57 |            763 |          185 |         0.2424640 |
 
 Top 10 Defensive Scorers
+
+Wayne is still looking more incredible from this data. While his number
+of goals is greater than his nearest scorer by %28 his number of assists
+is %64 greater\! He must have been great at setting up his teammates and
+an excellent passer. Also it looks like there are higher goals/points
+ratios for left and right forward positions compared to the center
+positon.
 
 ## Performance by Draft Pick
 
@@ -845,29 +937,28 @@ using the table command on the county code variable to count the number
 of players. Then we use the kable funciton to make it more pretty. There
 are over twice as many candaians playing in the NHL compared to
 americans\! It seems like some rebranding is necessary given 7 of the 31
-candian teams and the majority of players are from another country.
+candian teams and the majority of players are from another country. Also
+it looks like defensemen are drafted more frequently than other
+positions which is not surprising given this is technically 3 players
+from what I know.
 
 ## Number of Players by Country
 
 ``` r
-table(draft$countryCode) %>%
+#creating a vector of top 10 most drafted countries
+top_10_countries<-table(draft$countryCode) %>%
   sort() %>%
-  tail(10) %>% 
+  tail(10) %>%
+  c()
+
+draft_10_countries<-draft %>% 
+  filter(countryCode %in% names(top_10_countries),
+         str_detect(position,'/')==FALSE) #Removing players of dual positons
+
+table_county_position_code<-table(draft_10_countries$countryCode,
+                                  draft_10_countries$position) %>%
   kable()
 ```
-
-| Var1 | Freq |
-| :--- | ---: |
-| LVA  |   36 |
-| CHE  |   67 |
-| DEU  |   70 |
-| SVK  |  166 |
-| CZE  |  452 |
-| FIN  |  456 |
-| RUS  |  646 |
-| SWE  |  721 |
-| USA  | 2479 |
-| CAN  | 6239 |
 
 We can also see how the number of players has changed from year to year
 by graphing the number of usa born and foreign born players over time. I
@@ -910,11 +1001,11 @@ compared to sweden or the united states. However, it should be noted
 that there are many more canadian players than sweden or u.s. players.
 
 ``` r
-country<-summary_points %>% 
+summary_draft<-summary_points %>% 
   inner_join(draft,by = "playerId") %>%
   filter(countryCode %in% c('CZE','FIN','RUS','SWE','USA','CAN'))
 
-ggplot(country %>% filter(seasons>1,countryCode %in% c('SWE','USA','CAN')),aes(y=ppg))+
+ggplot(summary_draft %>% filter(seasons>1,countryCode %in% c('SWE','USA','CAN')),aes(y=ppg))+
   facet_wrap(~countryCode)+
   geom_boxplot()
 ```
@@ -927,16 +1018,19 @@ using a third dimension that shows through the shape of the point.
 Unsurprisingly, it looks like the more hall of famers are from canada.
 Also, one czech player looks to have some amazing career totals but isnt
 in the hall of fame. I looked him up and Jaromir Jagr is not yet
-elligble for the hall of fame but will be inducted. Most of the
+elligble for the hall of fame but will surely be inducted. Most of the
 countries have the same trendline for career assists and goals. Sweden
 looks like on average they score more assists than goals. However, it
-seems likely that this could be affected by a few outliers.
+seems likely that this could be affected by a few outliers. So we then
+calcualte the average assist to goals ratio for players with at least 5
+assists and 5 goals. It looks like swedes tend to have higher assist to
+goal ratios.
 
 ``` r
-country_player<-country%>%
+country_summary<-summary_draft%>%
   inner_join(player,by=c("birthDate","firstName","height", "lastName"))
 
-ggplot(country_player %>% filter(seasons>1),aes(x=total_assists,y=total_goals,color=countryCode,shape=inHockeyHof))+
+ggplot(country_summary %>% filter(seasons>1),aes(x=total_assists,y=total_goals,color=countryCode,shape=inHockeyHof))+
   geom_point()+
   geom_smooth(method='lm',se=FALSE,aes(group=countryCode))+
   ggtitle('Career Points and Assists by Country and Presence in Hall of Fame')+
@@ -947,23 +1041,28 @@ ggplot(country_player %>% filter(seasons>1),aes(x=total_assists,y=total_goals,co
 ![](README_files/figure-gfm/CareerPoints-1.png)<!-- -->
 
 ``` r
-country_player %>% filter(countryCode=='CZE') %>% arrange(desc(total_points)) %>% select(total_points,inHockeyHof,activePlayer,draftYear)
+country_summary %>% filter(total_assists>5 & total_goals>5) %>% mutate(agr=total_assists/total_goals) %>% group_by(countryCode) %>% summarise(avg_assis_goal_rat=mean(agr,na.rm=TRUE)) %>% kable(title='Average Assist to Goal ratio by County')
+```
+
+| countryCode | avg\_assis\_goal\_rat |
+| :---------- | --------------------: |
+| CAN         |              2.045476 |
+| CZE         |              2.240119 |
+| FIN         |              2.129998 |
+| RUS         |              1.935125 |
+| SWE         |              2.485746 |
+| USA         |              2.144531 |
+
+``` r
+country_summary %>% filter(countryCode=='CZE') %>% arrange(desc(total_points)) %>% select(total_points,inHockeyHof,activePlayer,draftYear) %>% head(3)
 ```
 
     ## Adding missing grouping variables: `playerId`, `full_name`
 
-    ## # A tibble: 183 x 6
-    ## # Groups:   playerId, full_name, activePlayer [181]
-    ##    playerId full_name     total_points inHockeyHof activePlayer draftYear
-    ##       <int> <chr>                <int> <lgl>       <lgl>            <int>
-    ##  1  8448208 Jaromir Jagr          1921 FALSE       FALSE             1990
-    ##  2  8460542 Patrik Elias          1025 FALSE       FALSE             1994
-    ##  3  8460577 Milan Hejduk           805 FALSE       FALSE             1994
-    ##  4  8459492 Vinny Prospal          765 FALSE       FALSE             1993
-    ##  5  8447958 Bobby Holik            747 FALSE       FALSE             1989
-    ##  6  8460465 Petr Sykora            721 FALSE       FALSE             1995
-    ##  7  8449807 Petr Nedved            717 FALSE       FALSE             1990
-    ##  8  8458955 Martin Straka          717 FALSE       FALSE             1992
-    ##  9  8456966 Robert Lang            703 FALSE       FALSE             1990
-    ## 10  8474161 Jakub Voracek          695 FALSE       TRUE              2007
-    ## # ... with 173 more rows
+    ## # A tibble: 3 x 6
+    ## # Groups:   playerId, full_name, activePlayer [3]
+    ##   playerId full_name    total_points inHockeyHof activePlayer draftYear
+    ##      <int> <chr>               <int> <lgl>       <lgl>            <int>
+    ## 1  8448208 Jaromir Jagr         1921 FALSE       FALSE             1990
+    ## 2  8460542 Patrik Elias         1025 FALSE       FALSE             1994
+    ## 3  8460577 Milan Hejduk          805 FALSE       FALSE             1994
