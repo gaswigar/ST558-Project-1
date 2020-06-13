@@ -326,9 +326,9 @@ draft_10_countries<-draft %>%
   filter(countryCode %in% names(top_10_countries),
          str_detect(position,'/')==FALSE) #Removing players of dual positons
 
-table_county_position_code<-table(draft_10_countries$countryCode,
-                                  draft_10_countries$position) %>%
-  kable()
+table(draft_10_countries$countryCode,draft_10_countries$position) %>%
+  kable(caption = "Number of Draft Picks by Posotion and Country ") %>%
+  print()
 ```
 
 We can also see how the number of players has changed from year to year by graphing the number of usa born and foreign born players over time. I am a NBA fan so I wondered if similarly we would see an increase of foreign born plavers over time. However, it seems clear that foreign born players are drafted more frequentyly. Additionally, the number of foreign born players looks to be more correlated with the total number of draft picks than is the number of us born players. Also when there was an increase in draft pick it looks like franchises were more likely to seek out foreign players than domestic players. 

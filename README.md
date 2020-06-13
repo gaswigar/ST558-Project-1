@@ -186,7 +186,7 @@ print(get_request)
 ```
 
     ## Response [https://records.nhl.com/site/api/franchise-skater-records?cayenneExp=franchiseId=1]
-    ##   Date: 2020-06-13 02:41
+    ##   Date: 2020-06-13 02:47
     ##   Status: 200
     ##   Content-Type: application/json
     ##   Size: 1.07 MB
@@ -955,10 +955,22 @@ draft_10_countries<-draft %>%
   filter(countryCode %in% names(top_10_countries),
          str_detect(position,'/')==FALSE) #Removing players of dual positons
 
-table_county_position_code<-table(draft_10_countries$countryCode,
-                                  draft_10_countries$position) %>%
+table(draft_10_countries$countryCode,draft_10_countries$position) %>%
   kable()
 ```
+
+|     |    C |    D |   F |   G |   LW |  RW |
+| --- | ---: | ---: | --: | --: | ---: | --: |
+| CAN | 1370 | 1977 | 129 | 652 | 1098 | 988 |
+| CHE |   12 |   17 |  11 |  11 |    6 |  10 |
+| CZE |   92 |  147 |  26 |  40 |   57 |  89 |
+| DEU |   15 |   25 |   3 |  12 |   11 |   3 |
+| FIN |   90 |  149 |  31 |  57 |   54 |  73 |
+| LVA |    9 |   12 |   4 |   4 |    5 |   2 |
+| RUS |  116 |  196 |  41 |  39 |  128 | 120 |
+| SVK |   34 |   44 |  11 |  15 |   28 |  34 |
+| SWE |  134 |  268 |  44 |  62 |  115 |  93 |
+| USA |  545 |  888 |  44 | 235 |  355 | 396 |
 
 We can also see how the number of players has changed from year to year
 by graphing the number of usa born and foreign born players over time. I
